@@ -45,7 +45,7 @@
     const progressBar = document.getElementById('progress-bar');
     const fileList = document.getElementById('file-list');
 
-    const ws = new WebSocket('ws://localhost:8580');
+    const ws = new WebSocket('ws://178.172.195.18:8580');
 
     ws.onmessage = (message) => {
       console.log('Received message:', message.data);
@@ -86,14 +86,14 @@
         alert('Произошла ошибка при загрузке файла. Проверьте соединение и повторите попытку.');
       };
 
-      xhr.open('POST', 'http://localhost:8580/upload');
+      xhr.open('POST', 'http://178.172.195.18:8580/upload');
 
 
       xhr.send(formData);
     });
 
     const loadFileList = async () => {
-      const response = await fetch('http://localhost:8580/files');
+      const response = await fetch('http://178.172.195.18:8580/files');
       const files = await response.json();
 
       console.log(files);
