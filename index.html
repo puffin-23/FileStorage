@@ -45,7 +45,7 @@
     const progressBar = document.getElementById('progress-bar');
     const fileList = document.getElementById('file-list');
 
-    const ws = new WebSocket('ws://localhost:3000');
+    const ws = new WebSocket('ws://localhost:8580');
 
     ws.onmessage = (message) => {
       console.log('Received message:', message.data);
@@ -75,7 +75,7 @@
       xhr.onload = () => {
         if (xhr.status === 200) {
           alert('Файл успешно загружен!');
-          progressBar.style.width = '0%'; // сбрасываем прогресс
+          progressBar.style.width = '0%';
           loadFileList();
         } else {
           alert('Ошибка загрузки файла');
@@ -86,20 +86,22 @@
         alert('Произошла ошибка при загрузке файла. Проверьте соединение и повторите попытку.');
       };
 
-      xhr.open('POST', 'http://localhost:3000/upload');
+      xhr.open('POST', 'http://localhost:8580/upload');
 
 
       xhr.send(formData);
     });
 
     const loadFileList = async () => {
-      const response = await fetch('http://localhost:3000/files');
+      const response = await fetch('http://localhost:8580/files');
       const files = await response.json();
-      fileList.innerHTML = files.map(file => `<a href="http://localhost:3000/uploads/${file}" download="${file}">${file}</a>`).join('<br>');
+
+      console.log(files);
+
+      fileList.innerHTML = files.map((file) => `<a href="${file.path}" download="${file.filename}">${file.filename}</a><br>${file.comment}<br>`).join('<br>');
     };
 
-    // Загружаем список файлов при загрузке страницы
-    window.onload = loadFileList;
+    loadFileList();
   </script>
 </body>
 
