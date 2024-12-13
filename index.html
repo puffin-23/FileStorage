@@ -30,28 +30,30 @@
 
 <body>
   <h1>File Storage</h1>
-  <input type="file" id="file-input">
-  <input type="text" id="comment-input" placeholder="Введите комментарий">
-  <button id="upload-btn">Upload</button>
-  <div id="progress">
-    <div id="progress-bar"></div>
+
+  <div>
+    <input type="file" name="file" id="file-input" required />
+    <input type="text" name="comment" id="comment-input" />
+    <button type="submit" id="upload-btn">Загрузить файл</button>
+  </div>
+
+  <div id="progressContainer" style="margin-top: 20px;">
+    <progress id="progress-bar" value="0" max="100" ></progress>
+    <span id="progressText">0%</span>
+  </div>
   </div>
   <div class="file-list" id="file-list"></div>
 
+  <script src="/socket.io/socket.io.js"></script>
   <script>
     const uploadButton = document.getElementById('upload-btn');
-    const fileInput = document.getElementById('file-input');
-    const commentInput = document.getElementById('comment-input');
-    const progressBar = document.getElementById('progress-bar');
     const fileList = document.getElementById('file-list');
 
-    const ws = new WebSocket('ws://178.172.195.18:8580');
-
-    ws.onmessage = (message) => {
-      console.log('Received message:', message.data);
-    };
+    const socket = io()
 
     uploadButton.addEventListener('click', async () => {
+      const fileInput = document.getElementById('file-input');
+      const commentInput = document.getElementById('comment-input');
       const file = fileInput.files[0];
       const comment = commentInput.value;
 
@@ -65,17 +67,20 @@
       formData.append('file', file);
       formData.append('comment', comment);
 
+      xhr.open('POST', 'http://178.172.195.18:8580/upload', true);
+
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) {
-          const percentComplete = (event.loaded / event.total) * 100;
-          progressBar.style.width = percentComplete + '%';
+          const percentComplete = Math.round((event.loaded / event.total) * 100);
+
+          const progressBar = document.getElementById('progress-bar').style.width = percentComplete + '%';
+          const progressText = document.getElementById('progressText').innerText = percentComplete + '%';
         }
       };
 
       xhr.onload = () => {
         if (xhr.status === 200) {
           alert('Файл успешно загружен!');
-          progressBar.style.width = '0%';
           loadFileList();
         } else {
           alert('Ошибка загрузки файла');
@@ -86,17 +91,17 @@
         alert('Произошла ошибка при загрузке файла. Проверьте соединение и повторите попытку.');
       };
 
-      xhr.open('POST', 'http://178.172.195.18:8580/upload');
-
-
       xhr.send(formData);
-    });
+    })
 
+    socket.on('uploadedProgress', (progress) => {
+      console.log(progress + '%');
+      
+    });
+    
     const loadFileList = async () => {
       const response = await fetch('http://178.172.195.18:8580/files');
       const files = await response.json();
-
-      console.log(files);
 
       fileList.innerHTML = files.map((file) => `<a href="${file.path}" download="${file.filename}">${file.filename}</a><br>${file.comment}<br>`).join('<br>');
     };
