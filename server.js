@@ -4,11 +4,17 @@ const multer = require('multer');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-const { Server } = require('socket.io');
+const Websocket = require('ws');
+
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+
+const ws = new Websocket.Server({ server });
+
+ws.on('connection', (ws) => {
+   console.log('Client connected');
+});
 
 const port = 8580;
 
@@ -19,16 +25,12 @@ const storage = multer.diskStorage({
       const totalSize = req.headers['content-length'];
       let uploadedSize = 0;
       req.on('data', (chunk) => {
-
+   
          uploadedSize += chunk.length;
-         const progress = Math.round((uploadedSize / totalSize) * 100)
-
-         io.emit('uploadedProgress', progress);
-
-      });
-
-      req.on('end', () => {
-         io.emit('uploadedProgress', 100);
+         const progress = Math.round((uploadedSize / totalSize) * 100).toString();
+         
+         ws.clients.forEach(client => client.send(progress));
+   
       });
 
       cb(null, 'uploads/');
@@ -80,11 +82,6 @@ app.get('/files', (req, res) => {
    const fileData = readFileData();
    res.send(fileData);
 });
-
-
-io.on('connection', (socket) => {
-   console.log('Client connected');
-})
 
 
 server.listen(port, () => {
